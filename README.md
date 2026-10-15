@@ -1,8 +1,6 @@
 [![StackShare](http://img.shields.io/badge/tech-stack-0690fa.svg?style=flat)](https://stackshare.io/ctfcafe/ctfcafe)
 
-# Contributors
 
-[@gagan-guptas]( https://github.com/gagan-guptas)
 
 # Features
 
