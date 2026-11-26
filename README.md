@@ -13,13 +13,16 @@ A full-stack **Capture The Flag (CTF)** competition hosting and real-time leader
 ## ✨ Key Features
 
 - **Challenge & Admin Management:** Create challenges, file attachments, hints, code snippets, and flags directly from the admin dashboard.
-  - Flag submission brute-force protection
+  - Flag submission brute-force protection & Nginx rate-limiting (`nginx_ctf.conf`)
   - Dynamic per-team flags and dynamic scoring with configurable decay
   - Dockerized challenge container support per team
 - **Individual & Team Competitions:** Support for solo participants or teams, First Blood tracking, and user/team administration (promoting, banning, verification).
 - **Live Scoreboard & Analytics:** Automatic tie resolution, global & per-team statistics, interactive charts (`@ant-design/plots`), and JSON scoreboard import/export.
-- **Competition Scheduling & Customization:** Configure start/end timers, email verification, site theme colors, rules, and frontpage content.
-- **Security Hardening:** Includes `bcryptjs` password hashing, `express-session` with Mongo store, `express-mongo-sanitize`, `xss-clean`, and input validation.
+- **Security & Reliability Hardening:**
+  - Startup validation for required environment variables (`MONGODB_CONNSTRING`, `SESSION_SECRET`)
+  - `express-mongo-sanitize` NoSQL-injection protection, `httpOnly` + `sameSite: "lax"` session cookies, CORS preflight (`204`) handling, and `async/await` error-handled auth middleware
+  - Cryptographically secure default admin password generation (`crypto.randomBytes`)
+  - Health check endpoint (`GET /api/health`) and resilient React session loader (`frontEnd/src/App.jsx`)
 
 ---
 
@@ -27,10 +30,20 @@ A full-stack **Capture The Flag (CTF)** competition hosting and real-time leader
 
 ```text
 ctf-leaderboard-platform/
-├── frontEnd/        # React SPA (React Router, Ant Design Plots, Ace Editor)
-├── backEnd/         # Node.js / Express REST API & MongoDB (Mongoose) models
-├── nginx_ctf.conf   # Nginx reverse-proxy configuration
-├── package.json     # Root dependencies
+├── backEnd/
+│   ├── server.js          # Express server, CORS, session auth & /api/health
+│   ├── setup.js           # Initial DB seed & crypto-secure admin bootstrap
+│   ├── .env.example       # Backend environment variable template
+│   ├── controllers/       # Business logic
+│   ├── models/            # Mongoose schemas
+│   ├── routes/            # Global, user, and admin API routes
+│   └── package.json
+├── frontEnd/
+│   ├── src/App.jsx        # React SPA root, theme loader & session bootstrap
+│   ├── .env.example       # Frontend environment variable template
+│   └── package.json
+├── nginx_ctf.conf         # Production Nginx reverse proxy & rate limiting
+├── .gitignore
 └── README.md
 ```
 
@@ -49,13 +62,12 @@ cd ctf-leaderboard-platform
 ```
 
 ### 2. Configure Environment Variables
-Copy `.env.example` to `.env` inside each service directory and populate your values:
-- `/backEnd/.env`
-- `/frontEnd/.env`
-- `/dockerAPI/.env` *(if running Dockerized challenges)*
+Copy the bundled templates to `.env` and fill in your values:
+- `backEnd/.env.example` → `backEnd/.env` (`MONGODB_CONNSTRING`, `SESSION_SECRET`, `FRONTEND_URI`, `PORT`)
+- `frontEnd/.env.example` → `frontEnd/.env` (`REACT_APP_BACKEND_URI=http://localhost:3001`)
 
 ### 3. Start MongoDB
-Ensure your MongoDB service is running locally (or point your backend `.env` to a remote MongoDB URI).
+Ensure your MongoDB service is running locally (or configure a MongoDB Atlas URI in `backEnd/.env`).
 
 ### 4. Start the Backend
 ```bash
@@ -63,6 +75,7 @@ cd backEnd
 npm install
 npm start
 ```
+Verify the API is up at `http://localhost:3001/api/health`.
 
 ### 5. Start the Frontend
 ```bash
@@ -74,7 +87,7 @@ npm run start-react
 npm start
 ```
 
-> **Production Note:** You can use `pm2` to manage the Node.js backend/frontend processes alongside `nginx_ctf.conf`. Remember to create an admin account and remove any default `admin:admin` credentials after initial setup.
+> **Production Note:** You can use `pm2` to run the backend/frontend behind `nginx_ctf.conf`. On first boot, `setup.js` prints a randomly generated initial `admin` password to the server console—change or remove it immediately after setup.
 
 ---
 
