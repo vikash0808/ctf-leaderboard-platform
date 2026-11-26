@@ -1,61 +1,83 @@
-[![StackShare](http://img.shields.io/badge/tech-stack-0690fa.svg?style=flat)](https://stackshare.io/ctfcafe/ctfcafe)
+# 🚩 CTF Leaderboard Platform
 
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
 
+A full-stack **Capture The Flag (CTF)** competition hosting and real-time leaderboard platform built with **React**, **Node.js / Express**, **MongoDB**, and **Nginx**. Supports both individual and team-based cybersecurity competitions, dynamic scoring, admin management, and per-team Dockerized challenges.
 
-# Features
+---
 
-- Create your own challenges, files, hints, code snippets and flags from the admin dashboard
-  - File uploads to the server
-  - Flag submit bruteforce protection
-  - Docker challenges
-  - Dynamic flags for each team
-  - Dynamic scoring possible with a decay of 15
-- Individual and Team based competitions
-  - Have users play on their own or form teams to play together
-  - First blood's
-  - Docker's launched by team
-- Scoreboard with automatic tie resolution
-  - See global user, team and challenge stats
-  - See indivudal team & user stats
-- Automatic competition starting and ending
-  - Easily set endTime & startTime from the admin dashboard
-- Team and user management ( promoting, banning, ect )
-- Customize site colors, background, rules & frontpage
-- Importing and Exporting of CTF scoreboards into json
-- Email verification on registration
-- And more...
+## ✨ Key Features
 
-# Manual Backend & Frontend Setup ( Dockers )
+- **Challenge & Admin Management:** Create challenges, file attachments, hints, code snippets, and flags directly from the admin dashboard.
+  - Flag submission brute-force protection
+  - Dynamic per-team flags and dynamic scoring with configurable decay
+  - Dockerized challenge container support per team
+- **Individual & Team Competitions:** Support for solo participants or teams, First Blood tracking, and user/team administration (promoting, banning, verification).
+- **Live Scoreboard & Analytics:** Automatic tie resolution, global & per-team statistics, interactive charts (`@ant-design/plots`), and JSON scoreboard import/export.
+- **Competition Scheduling & Customization:** Configure start/end timers, email verification, site theme colors, rules, and frontpage content.
+- **Security Hardening:** Includes `bcryptjs` password hashing, `express-session` with Mongo store, `express-mongo-sanitize`, `xss-clean`, and input validation.
 
-*docker compose setup is only usable if you wont run any dockerized challenges else use pm2*
+---
 
-# Manual Backend & Frontend Setup ( No Dockers )
+## 🏗️ Project Structure
 
-## Prerequisites
-- Node.JS
-- MongoDB
+```text
+ctf-leaderboard-platform/
+├── frontEnd/        # React SPA (React Router, Ant Design Plots, Ace Editor)
+├── backEnd/         # Node.js / Express REST API & MongoDB (Mongoose) models
+├── nginx_ctf.conf   # Nginx reverse-proxy configuration
+├── package.json     # Root dependencies
+└── README.md
+```
 
-## Setup
-- copy `.env.example` to `.env` file in /backEnd/ and fill the info needed
+---
 
-- copy `.env.example` to `.env` file in /dockerAPI/ and fill the info needed
+## 💻 Local Setup
 
-- copy `.env.example` to `.env` file in /frontEnd/ and fill the info needed
+### Prerequisites
+- **Node.js** (v16+ / v18+)
+- **MongoDB** (local Community Server or MongoDB Atlas)
 
-## Startup
+### 1. Clone the Repository
+```bash
+git clone https://github.com/vikash0808/ctf-leaderboard-platform.git
+cd ctf-leaderboard-platform
+```
 
-`MongoDB`
-- Start your mongoDB database
-- If you're testing on Windows, you may need to download https://www.mongodb.com/try/download/community
+### 2. Configure Environment Variables
+Copy `.env.example` to `.env` inside each service directory and populate your values:
+- `/backEnd/.env`
+- `/frontEnd/.env`
+- `/dockerAPI/.env` *(if running Dockerized challenges)*
 
-`/frontEnd`
-- Run `npm install` to install the requirements from `package.json`, then run `npm start` or `npm run start-react` for easier dev to start the frontend
+### 3. Start MongoDB
+Ensure your MongoDB service is running locally (or point your backend `.env` to a remote MongoDB URI).
 
-`/backEnd`
-- Run `npm install` to install the requirements from `package.json`, then run `npm start` to start & setup the backend
-- 
-*You can use `pm2` if you want an easy way to handle the nodejs processes.*
+### 4. Start the Backend
+```bash
+cd backEnd
+npm install
+npm start
+```
 
-Make sure to create a new account, promote him to admin and delete the admin:admin user after setup!
+### 5. Start the Frontend
+```bash
+cd frontEnd
+npm install
+# Development mode:
+npm run start-react
+# Or production build & serve:
+npm start
+```
 
-Good to go!
+> **Production Note:** You can use `pm2` to manage the Node.js backend/frontend processes alongside `nginx_ctf.conf`. Remember to create an admin account and remove any default `admin:admin` credentials after initial setup.
+
+---
+
+## 👨‍💻 Maintained By
+
+**Vikash Dhillan** — GitHub: [@vikash0808](https://github.com/vikash0808)
