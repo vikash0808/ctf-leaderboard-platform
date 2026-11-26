@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const ctfConfig = require("./models/ctfConfigModel.js");
 const theme = require("./models/themeModel.js");
 const users = require("./models/userModel.js");
@@ -6,10 +7,10 @@ const encryptionController = require("./controllers/encryptionController.js");
 function generatePassword(length) {
   const characters =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@";
+  const bytes = crypto.randomBytes(length);
   let password = "";
   for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    password += characters[randomIndex];
+    password += characters[bytes[i] % characters.length];
   }
   return password;
 }
@@ -43,12 +44,7 @@ exports.setupDB = async function () {
           text: "- Don't share flags, or share info with other teams!",
         },
         {
-          text: "- Dont DDOS our services or bruteforce any flags/websites",
-        },
-        {
-          text: "- If you do not understand the rules:",
-          link: "https://www.youtube.com/watch?v=oHg5SJYRHA0",
-          linkText: "https://www.sec.gov/",
+          text: "- Don't DDoS our services or bruteforce any flags/websites",
         },
       ],
     });
@@ -61,7 +57,7 @@ exports.setupDB = async function () {
   if (!notificationsConfig) {
     await ctfConfig.create({
       name: "notifications",
-      value: [{ message: "Welcome to CTFCafe!", type: "admin", seenBy: [] }],
+      value: [{ message: "Welcome to CTF Leaderboard!", type: "admin", seenBy: [] }],
     });
   }
 
@@ -94,7 +90,7 @@ exports.setupDB = async function () {
   const adminExists = await users.findOne({ isAdmin: true });
 
   if (!adminExists) {
-    const rawPassword = generatePassword(10);
+    const rawPassword = generatePassword(14);
     const password = await encryptionController.encrypt(rawPassword);
 
     await users.create({
@@ -105,7 +101,7 @@ exports.setupDB = async function () {
       key: "none",
       isAdmin: true,
     });
-    console.log(`Created default admin. admin:${rawPassword} (DELETE ASAP)`);
+    console.log(`Created default admin. admin:${rawPassword} (CHANGE/DELETE ASAP)`);
   }
 
   const tagsConfig = await ctfConfig.findOne({ name: "tags" });

@@ -11,7 +11,7 @@ import Login from "./components/Login";
 import Logout from "./components/Logout";
 import Register from "./components/Register";
 import Challenges from "./components/Challenges";
-import Admin from "./components//Admin/Admin";
+import Admin from "./components/Admin/Admin";
 import Team from "./components/Team";
 import UserTeam from "./components/UserTeam";
 import User from "./components/User";
@@ -26,60 +26,57 @@ import LoadingScreen from "react-loading-screen";
 // Objects
 import AppContext from "./components/Data/AppContext";
 
+function safeParse(key, fallback) {
+  try {
+    const val = JSON.parse(localStorage.getItem(key));
+    return val !== null && val !== undefined ? val : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [userData, setUserData] = useState(false);
-  const [theme, setTheme] = useState(
-    JSON.parse(localStorage.getItem("theme")) || []
+  const [theme, setTheme] = useState(() => safeParse("theme", []));
+  const [rules, setRules] = useState(() => safeParse("rules", []));
+  const [dynamicScoring, setDynamicScoring] = useState(() =>
+    safeParse("dynamicScoring", false)
   );
-  const [rules, setRules] = useState(
-    JSON.parse(localStorage.getItem("rules")) || []
+  const [socialLinks, setSocialLinks] = useState(() =>
+    safeParse("socialLinks", [])
   );
-  const [dynamicScoring, setDynamicScoring] = useState(
-    JSON.parse(localStorage.getItem("dynamicScoring")) || false
-  );
-  const [socialLinks, setSocialLinks] = useState(
-    JSON.parse(localStorage.getItem("socialLinks")) || []
-  );
-  const [tags, setTags] = useState(
-    JSON.parse(localStorage.getItem("tags")) || []
-  );
-  const [tagColors, setTagColors] = useState(
-    JSON.parse(localStorage.getItem("tagColors")) || []
-  );
-  const [sponsors, setSponsors] = useState(
-    JSON.parse(localStorage.getItem("sponsors")) || []
-  );
-  const [endTime, setEndTime] = useState(
-    JSON.parse(localStorage.getItem("endTime")) || 0
-  );
-  const [startTime, setStartTime] = useState(
-    JSON.parse(localStorage.getItem("startTime")) || 0
-  );
+  const [tags, setTags] = useState(() => safeParse("tags", []));
+  const [tagColors, setTagColors] = useState(() => safeParse("tagColors", []));
+  const [sponsors, setSponsors] = useState(() => safeParse("sponsors", []));
+  const [endTime, setEndTime] = useState(() => safeParse("endTime", 0));
+  const [startTime, setStartTime] = useState(() => safeParse("startTime", 0));
   const alert = useAlert();
-  const [notifications, setNotifications] = useState(
-    JSON.parse(localStorage.getItem("notifications")) || []
+  const [notifications, setNotifications] = useState(() =>
+    safeParse("notifications", [])
   );
-  const [userCategories, setUserCategories] = useState(
-    JSON.parse(localStorage.getItem("userCategories")) || []
+  const [userCategories, setUserCategories] = useState(() =>
+    safeParse("userCategories", [])
   );
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const backendUri = process.env.REACT_APP_BACKEND_URI || "http://localhost:3001";
+
   const globalData = {
-    loggedIn: loggedIn,
-    userData: userData,
-    theme: theme,
-    rules: rules,
-    notifications: notifications,
-    dynamicScoring: dynamicScoring,
-    socialLinks: socialLinks,
-    tags: tags,
-    tagColors: tagColors,
-    sponsors: sponsors,
-    startTime: startTime,
-    endTime: endTime,
-    userCategories: userCategories,
+    loggedIn,
+    userData,
+    theme,
+    rules,
+    notifications,
+    dynamicScoring,
+    socialLinks,
+    tags,
+    tagColors,
+    sponsors,
+    startTime,
+    endTime,
+    userCategories,
     setNotifications,
     setTheme,
     setLoggedIn,
@@ -90,14 +87,14 @@ function App() {
 
   const getConfigs = () => {
     axios
-      .get(process.env.REACT_APP_BACKEND_URI + "/api/getConfigs")
+      .get(backendUri + "/api/getConfigs")
       .then((response) => {
         if (response.data.state === "sessionError") {
           globalData.alert.error("Session expired!");
           globalData.setUserData({});
           globalData.setLoggedIn(false);
           globalData.navigate("/", { replace: true });
-        } else {
+        } else if (Array.isArray(response.data)) {
           response.data.forEach((config) => {
             switch (config.name) {
               case "rules":
@@ -123,29 +120,26 @@ function App() {
                 setSocialLinks(config.value);
                 break;
               case "tags":
-                localStorage.setItem(
-                  "tags",
-                  JSON.stringify(config.value)
-                );
+                localStorage.setItem("tags", JSON.stringify(config.value));
                 setTags(config.value);
                 break;
               case "tagColors":
-                localStorage.setItem(
-                  "tagColors",
-                  JSON.stringify(config.value)
-                );
+                localStorage.setItem("tagColors", JSON.stringify(config.value));
                 setTagColors(config.value);
                 break;
               case "startTime":
                 localStorage.setItem("startTime", JSON.stringify(config.value));
-                setStartTime(parseInt(config.value));
+                setStartTime(parseInt(config.value, 10));
                 break;
               case "endTime":
                 localStorage.setItem("endTime", JSON.stringify(config.value));
-                setEndTime(parseInt(config.value));
+                setEndTime(parseInt(config.value, 10));
                 break;
               case "userCategories":
-                localStorage.setItem("userCategories", JSON.stringify(config.value));
+                localStorage.setItem(
+                  "userCategories",
+                  JSON.stringify(config.value)
+                );
                 setUserCategories(config.value);
                 break;
               default:
@@ -155,34 +149,35 @@ function App() {
         }
       })
       .catch((err) => {
-        console.log(err.message);
+        console.error(err.message);
       });
   };
 
   const getNotifications = () => {
     axios
-      .get(process.env.REACT_APP_BACKEND_URI + "/api/user/getNotifications", {
+      .get(backendUri + "/api/user/getNotifications", {
         withCredentials: true,
       })
       .then((response) => {
         if (response.data.state === "success") {
-          setNotifications([...notifications, ...response.data.notifications]);
-          localStorage.setItem(
-            "notifications",
-            JSON.stringify([...notifications, ...response.data.notifications])
-          );
+          setNotifications((prev) => {
+            const merged = [...prev, ...response.data.notifications];
+            localStorage.setItem("notifications", JSON.stringify(merged));
+            return merged;
+          });
         }
       })
       .catch((err) => {
-        console.log(err);
+        console.error(err);
       });
   };
 
   useLayoutEffect(() => {
     const root = document.documentElement;
     axios
-      .get(process.env.REACT_APP_BACKEND_URI + "/api/getTheme")
+      .get(backendUri + "/api/getTheme")
       .then((res) => {
+        if (!res.data || !res.data.theme) return;
         root.style.setProperty(
           "--color-1",
           res.data.theme.color_1 ? res.data.theme.color_1 : "#ff3c5c"
@@ -197,7 +192,7 @@ function App() {
         );
         root.style.setProperty(
           "--bg-img",
-          res.data.theme.bg_img.trim().length > 0
+          res.data.theme.bg_img && res.data.theme.bg_img.trim().length > 0
             ? `url(${res.data.theme.bg_img})`
             : "none"
         );
@@ -214,7 +209,7 @@ function App() {
   useEffect(() => {
     if (!loggedIn) {
       axios
-        .get(process.env.REACT_APP_BACKEND_URI + "/api/checkSession", {
+        .get(backendUri + "/api/checkSession", {
           withCredentials: true,
         })
         .then((res) => {
@@ -223,7 +218,7 @@ function App() {
 
             if (res.data.team) {
               const clubArray = (arr) => {
-                return arr.reduce((acc, val, ind) => {
+                return arr.reduce((acc, val) => {
                   const index = acc.findIndex(
                     (el) => el.username === val.username
                   );
@@ -253,7 +248,10 @@ function App() {
           }
           setLoading(false);
         })
-        .catch(console.log);
+        .catch((err) => {
+          console.error(err);
+          setLoading(false);
+        });
     }
   }, []);
 
